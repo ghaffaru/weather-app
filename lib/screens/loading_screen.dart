@@ -1,59 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:clima/services/location.dart';
+import 'package:clima/services/networking.dart';
+import 'location_screen.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+const apiKey = 'e3311f6761891b3558c08b64e1a9bcf9';
+
 class LoadingScreen extends StatefulWidget {
   @override
   _LoadingScreenState createState() => _LoadingScreenState();
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
+  double latitude;
+  double longitude;
 
   @override
   void initState() {
-    getLocation();
+    getLocationData();
     super.initState();
   }
 
-  void getLocation() async {
+  void getLocationData() async {
     Location location = Location();
     await location.getCurrentLocation();
-  }
 
-  void getData() async {
-    http.Response response = await http.get('https://samples.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=b6907d289e10d714a6e88b30761fae22');
-//    print(response.statusCode);
+    latitude = location.latitude;
+    longitude = location.longitude;
 
-    if (response.statusCode == 200) {
-      
-      String data = response.body;
-      var decodedData = jsonDecode(data);
+    NetworkHelper networkHelper = NetworkHelper(
+        url:
+            'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric');
 
-      int condition = decodedData['weather'][0]['id'];
-      double temperature = decodedData['main']['temp'];
-      String city = decodedData['name'];
+    var weatherData = await networkHelper.getData();
 
-      print(condition);
-      print(temperature);
-      print(city);
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return LocationScreen(locationWeather: weatherData);
+    }));
 
-    }else {
-      print(response.statusCode);
-    }
+//    int condition = decodedData['weather'][0]['id'];
+//    double temperature = decodedData['main']['temp'];
+//    String city = decodedData['name'];
   }
 
   @override
   Widget build(BuildContext context) {
-    getData();
     return Scaffold(
       body: Center(
-        child: RaisedButton(
-          onPressed: () {
-//            getLocation();
-          },
-          child: Text('Get Location'),
+        child: SpinKitDoubleBounce(
+          color: Colors.white,
+          size: 100.0,
         ),
       ),
     );
